@@ -59,78 +59,92 @@ const SECRET_KEY = '8219'; // Remplacez par une clé secrète complexe
 //       res.status(500).send('Erreur interne du serveur');
 //     }
 //   };
+
 exports.loginUser = async (req, res) => {
   const { email, mdp } = req.body;
 
   if (!email || !mdp) {
-      return res.status(400).json({ 
-          success: false,
-          message: 'Email et mot de passe requis' 
-      });
+    return res.status(400).json({ 
+      success: false,
+      message: 'Email et mot de passe requis' 
+    });
   }
 
   try {
-      const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
-      db.query(checkUserQuery, [email], async (err, result) => {
-          if (err) {
-              console.error('Erreur DB:', err);
-              return res.status(500).json({
-                  success: false,
-                  message: 'Erreur serveur'
-              });
-          }
-
-          if (result.length === 0) {
-              return res.status(404).json({
-                  success: false,
-                  message: 'Utilisateur non trouvé'
-              });
-          }
-
-          const user = result[0];
-
-          if (!user.validated) {
-              return res.status(403).json({
-                  success: false,
-                  message: 'Compte en attente de validation'
-              });
-          }
-
-          const isMatch = await bcrypt.compare(mdp, user.mdp);
-          if (!isMatch) {
-              return res.status(401).json({
-                  success: false,
-                  message: 'Mot de passe incorrect'
-              });
-          }
-
-          const token = jwt.sign(
-              { id: user.id, role: user.role }, 
-              SECRET_KEY, 
-              { expiresIn: '1h' }
-          );
-
-          // Réponse standardisée
-          res.status(200).json({
-              success: true,
-              message: 'Connexion réussie',
-              token,
-              user: {
-                  id: user.id,
-                  email: user.email,
-                  nom: user.nom,
-                  prenom: user.prenom,
-                  role: user.role,
-                  image: user.image
-              }
-          });
-      });
-  } catch (err) {
-      console.error('Erreur login:', err);
-      res.status(500).json({
+    // Utilisation du pool de connexions
+    db.getConnection(async (err, connection) => {
+      if (err) {
+        console.error('Erreur de connexion DB:', err);
+        return res.status(500).json({
           success: false,
-          message: 'Erreur serveur'
+          message: 'Erreur de connexion à la base de données'
+        });
+      }
+
+      const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
+      connection.query(checkUserQuery, [email], async (queryErr, result) => {
+        // Toujours libérer la connexion
+        connection.release();
+
+        if (queryErr) {
+          console.error('Erreur DB:', queryErr);
+          return res.status(500).json({
+            success: false,
+            message: 'Erreur serveur'
+          });
+        }
+
+        if (result.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Utilisateur non trouvé'
+          });
+        }
+
+        const user = result[0];
+
+        if (!user.validated) {
+          return res.status(403).json({
+            success: false,
+            message: 'Compte en attente de validation'
+          });
+        }
+
+        const isMatch = await bcrypt.compare(mdp, user.mdp);
+        if (!isMatch) {
+          return res.status(401).json({
+            success: false,
+            message: 'Mot de passe incorrect'
+          });
+        }
+
+        const token = jwt.sign(
+          { id: user.id, role: user.role }, 
+          SECRET_KEY, 
+          { expiresIn: '1h' }
+        );
+
+        res.status(200).json({
+          success: true,
+          message: 'Connexion réussie',
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            nom: user.nom,
+            prenom: user.prenom,
+            role: user.role,
+            image: user.image
+          }
+        });
       });
+    });
+  } catch (err) {
+    console.error('Erreur login:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
+    });
   }
 };
     
