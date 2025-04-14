@@ -1,5 +1,6 @@
 const db = require('../db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+
 const jwt = require('jsonwebtoken'); // JWT pour générer les tokens sécurisés
 
 const SECRET_KEY = '8219'; // Remplacez par une clé secrète complexe
