@@ -61,18 +61,24 @@ const SECRET_KEY = '8219'; // Remplacez par une clé secrète complexe
 //   };
 
 exports.loginUser = async (req, res) => {
-  const { email, mdp } = req.body;
-
-  if (!email || !mdp) {
-    return res.status(400).json({ 
-      success: false,
-      message: 'Email et mot de passe requis' 
-    });
-  }
-
-  try {
-    // Utilisation du pool de connexions
-    db.getConnection(async (err, connection) => {
+    const { email, mdp } = req.body;
+  
+    if (!email || !mdp) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email et mot de passe requis' 
+      });
+    }
+  
+    // Validation basique de l'email
+    if (!email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format email invalide'
+      });
+    }
+  
+    db.getConnection((err, connection) => {
       if (err) {
         console.error('Erreur de connexion DB:', err);
         return res.status(500).json({
@@ -80,12 +86,11 @@ exports.loginUser = async (req, res) => {
           message: 'Erreur de connexion à la base de données'
         });
       }
-
+  
       const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
       connection.query(checkUserQuery, [email], async (queryErr, result) => {
-        // Toujours libérer la connexion
-        connection.release();
-
+        connection.release(); // Toujours libérer la connexion
+  
         if (queryErr) {
           console.error('Erreur DB:', queryErr);
           return res.status(500).json({
@@ -93,58 +98,58 @@ exports.loginUser = async (req, res) => {
             message: 'Erreur serveur'
           });
         }
-
+  
         if (result.length === 0) {
           return res.status(404).json({
             success: false,
             message: 'Utilisateur non trouvé'
           });
         }
-
+  
         const user = result[0];
-
+  
         if (!user.validated) {
           return res.status(403).json({
             success: false,
             message: 'Compte en attente de validation'
           });
         }
-
-        const isMatch = await bcrypt.compare(mdp, user.mdp);
-        if (!isMatch) {
-          return res.status(401).json({
+  
+        try {
+          const isMatch = await bcrypt.compare(mdp, user.mdp);
+          if (!isMatch) {
+            return res.status(401).json({
+              success: false,
+              message: 'Mot de passe incorrect'
+            });
+          }
+  
+          const token = jwt.sign(
+            { id: user.id, role: user.role }, 
+            SECRET_KEY, 
+            { expiresIn: '1h' }
+          );
+  
+          res.status(200).json({
+            success: true,
+            message: 'Connexion réussie',
+            token,
+            user: {
+              id: user.id,
+              email: user.email,
+              nom: user.nom,
+              prenom: user.prenom,
+              role: user.role,
+              image: user.image
+            }
+          });
+        } catch (err) {
+          console.error('Erreur lors du login:', err);
+          res.status(500).json({
             success: false,
-            message: 'Mot de passe incorrect'
+            message: 'Erreur serveur'
           });
         }
-
-        const token = jwt.sign(
-          { id: user.id, role: user.role }, 
-          SECRET_KEY, 
-          { expiresIn: '1h' }
-        );
-
-        res.status(200).json({
-          success: true,
-          message: 'Connexion réussie',
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            nom: user.nom,
-            prenom: user.prenom,
-            role: user.role,
-            image: user.image
-          }
-        });
       });
     });
-  } catch (err) {
-    console.error('Erreur login:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur serveur'
-    });
-  }
-};
-    
+  };
