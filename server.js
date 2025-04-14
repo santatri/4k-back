@@ -16,6 +16,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       'https://4kdesigns-mada.com',
+      'https://4kfront.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173'
     ];
