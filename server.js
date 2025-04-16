@@ -62,7 +62,8 @@ app.get('/config', (req, res) => {
   res.json({
     DB_HOST: process.env.DB_HOST,
     FRONTEND_URL: process.env.FRONTEND_URL,
-    NODE_ENV: process.env.NODE_ENV
+    NODE_ENV: process.env.NODE_ENV,
+    DB_PORT: process.env.DB_PORT
   });
 });
 
