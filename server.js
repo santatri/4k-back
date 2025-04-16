@@ -58,12 +58,12 @@ const upload = multer({
 app.get('/api/ping', (req, res) => {
   res.json({ status: "OK", message: "Backend is working!kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" });
 });
-app.get('/config', (req, res) => {
+app.get('/api/config', (req, res) => {
   res.json({
-    DB_HOST: process.env.DB_HOST,
-    FRONTEND_URL: process.env.FRONTEND_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    DB_PORT: process.env.DB_PORT
+    DB_HOST:process.env.DB_HOST,
+    FRONTEND_URL:process.env.FRONTEND_URL,
+    NODE_ENV:process.env.NODE_ENV,
+    DB_PORT:process.env.DB_PORT
   });
 });
 
