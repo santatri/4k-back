@@ -25,7 +25,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Route de santé
+// Route de santés
 app.get('/api/health', (req, res) => {
   db.query('SELECT 1 + 1 AS result', (err) => {
     if (err) {
