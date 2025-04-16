@@ -56,7 +56,7 @@ const upload = multer({
 
 // Ajoutez ceci juste avant les routes existantes (après app.use(cors))
 app.get('/api/ping', (req, res) => {
-  res.json({ status: "OK", message: "Backend is working!" });
+  res.json({ status: "OK", message: "Backend is working!kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" });
 });
 app.get('/config', (req, res) => {
   res.json({
